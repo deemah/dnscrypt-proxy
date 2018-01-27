@@ -12,108 +12,108 @@ script:
   - echo $TRAVIS_GO_VERSION
   - cd dnscrypt-proxy
 
-  - go clean
-  - env GOOS=solaris go build -ldflags="-s -w"
+  # - go clean
+  # - env GOOS=solaris go build -ldflags="-s -w"
 
-  - go clean
-  - env GOOS=windows GOARCH=386 go build -ldflags="-s -w"
-  - mkdir win32
-  - ln dnscrypt-proxy.exe win32/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt win32/
-  - ln ../windows/* win32/
-  - zip -9 -r dnscrypt-proxy-win32-${TRAVIS_TAG:-dev}.zip win32
+  # - go clean
+  # - env GOOS=windows GOARCH=386 go build -ldflags="-s -w"
+  # - mkdir win32
+  # - ln dnscrypt-proxy.exe win32/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt win32/
+  # - ln ../windows/* win32/
+  # - zip -9 -r dnscrypt-proxy-win32-${TRAVIS_TAG:-dev}.zip win32
 
-  - go clean
-  - env GOOS=windows GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir win64
-  - ln dnscrypt-proxy.exe win64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt win64/
-  - ln ../windows/* win64/
-  - zip -9 -r dnscrypt-proxy-win64-${TRAVIS_TAG:-dev}.zip win64
+  # - go clean
+  # - env GOOS=windows GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir win64
+  # - ln dnscrypt-proxy.exe win64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt win64/
+  # - ln ../windows/* win64/
+  # - zip -9 -r dnscrypt-proxy-win64-${TRAVIS_TAG:-dev}.zip win64
 
-  - go clean
-  - env GO386=387 GOOS=openbsd GOARCH=386 go build -ldflags="-s -w"
-  - mkdir openbsd-i386
-  - ln dnscrypt-proxy openbsd-i386/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt openbsd-i386/
-  - tar czpvf dnscrypt-proxy-openbsd_i386-${TRAVIS_TAG:-dev}.tar.gz openbsd-i386
+  # - go clean
+  # - env GO386=387 GOOS=openbsd GOARCH=386 go build -ldflags="-s -w"
+  # - mkdir openbsd-i386
+  # - ln dnscrypt-proxy openbsd-i386/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt openbsd-i386/
+  # - tar czpvf dnscrypt-proxy-openbsd_i386-${TRAVIS_TAG:-dev}.tar.gz openbsd-i386
 
-  - go clean
-  - env GOOS=openbsd GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir openbsd-amd64
-  - ln dnscrypt-proxy openbsd-amd64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt openbsd-amd64/
-  - tar czpvf dnscrypt-proxy-openbsd_amd64-${TRAVIS_TAG:-dev}.tar.gz openbsd-amd64
+  # - go clean
+  # - env GOOS=openbsd GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir openbsd-amd64
+  # - ln dnscrypt-proxy openbsd-amd64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt openbsd-amd64/
+  # - tar czpvf dnscrypt-proxy-openbsd_amd64-${TRAVIS_TAG:-dev}.tar.gz openbsd-amd64
 
-  - go clean
-  - env GOOS=freebsd GOARCH=386 go build -ldflags="-s -w"
-  - mkdir freebsd-i386
-  - ln dnscrypt-proxy freebsd-i386/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt freebsd-i386/
-  - tar czpvf dnscrypt-proxy-freebsd_i386-${TRAVIS_TAG:-dev}.tar.gz freebsd-i386
+  # - go clean
+  # - env GOOS=freebsd GOARCH=386 go build -ldflags="-s -w"
+  # - mkdir freebsd-i386
+  # - ln dnscrypt-proxy freebsd-i386/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt freebsd-i386/
+  # - tar czpvf dnscrypt-proxy-freebsd_i386-${TRAVIS_TAG:-dev}.tar.gz freebsd-i386
 
-  - go clean
-  - env GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir freebsd-amd64
-  - ln dnscrypt-proxy freebsd-amd64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt freebsd-amd64/
-  - tar czpvf dnscrypt-proxy-freebsd_amd64-${TRAVIS_TAG:-dev}.tar.gz freebsd-amd64
+  # - go clean
+  # - env GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir freebsd-amd64
+  # - ln dnscrypt-proxy freebsd-amd64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt freebsd-amd64/
+  # - tar czpvf dnscrypt-proxy-freebsd_amd64-${TRAVIS_TAG:-dev}.tar.gz freebsd-amd64
 
-  - go clean
-  - env GOOS=dragonfly GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir dragonflybsd-amd64
-  - ln dnscrypt-proxy dragonflybsd-amd64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt dragonflybsd-amd64/
-  - tar czpvf dnscrypt-proxy-dragonflybsd_amd64-${TRAVIS_TAG:-dev}.tar.gz dragonflybsd-amd64
+  # - go clean
+  # - env GOOS=dragonfly GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir dragonflybsd-amd64
+  # - ln dnscrypt-proxy dragonflybsd-amd64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt dragonflybsd-amd64/
+  # - tar czpvf dnscrypt-proxy-dragonflybsd_amd64-${TRAVIS_TAG:-dev}.tar.gz dragonflybsd-amd64
 
-  - go clean
-  - env GOOS=netbsd GOARCH=386 go build -ldflags="-s -w"
-  - mkdir netbsd-i386
-  - ln dnscrypt-proxy netbsd-i386/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt netbsd-i386/
-  - tar czpvf dnscrypt-proxy-netbsd_i386-${TRAVIS_TAG:-dev}.tar.gz netbsd-i386
+  # - go clean
+  # - env GOOS=netbsd GOARCH=386 go build -ldflags="-s -w"
+  # - mkdir netbsd-i386
+  # - ln dnscrypt-proxy netbsd-i386/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt netbsd-i386/
+  # - tar czpvf dnscrypt-proxy-netbsd_i386-${TRAVIS_TAG:-dev}.tar.gz netbsd-i386
 
-  - go clean
-  - env GOOS=netbsd GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir netbsd-amd64
-  - ln dnscrypt-proxy netbsd-amd64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt netbsd-amd64/
-  - tar czpvf dnscrypt-proxy-netbsd_amd64-${TRAVIS_TAG:-dev}.tar.gz netbsd-amd64
+  # - go clean
+  # - env GOOS=netbsd GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir netbsd-amd64
+  # - ln dnscrypt-proxy netbsd-amd64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt netbsd-amd64/
+  # - tar czpvf dnscrypt-proxy-netbsd_amd64-${TRAVIS_TAG:-dev}.tar.gz netbsd-amd64
 
-  - go clean
-  - env GOOS=linux GOARCH=386 go build -ldflags="-s -w"
-  - mkdir linux-i386
-  - ln dnscrypt-proxy linux-i386/
-  - ln ../LICENSE ../systemd/* dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-i386/
-  - tar czpvf dnscrypt-proxy-linux_i386-${TRAVIS_TAG:-dev}.tar.gz linux-i386
+  # - go clean
+  # - env GOOS=linux GOARCH=386 go build -ldflags="-s -w"
+  # - mkdir linux-i386
+  # - ln dnscrypt-proxy linux-i386/
+  # - ln ../LICENSE ../systemd/* dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-i386/
+  # - tar czpvf dnscrypt-proxy-linux_i386-${TRAVIS_TAG:-dev}.tar.gz linux-i386
 
-  - go clean
-  - env GOOS=linux GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir linux-x86_64
-  - ln dnscrypt-proxy linux-x86_64/
-  - ln ../LICENSE ../systemd/* dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-x86_64/
-  - tar czpvf dnscrypt-proxy-linux_x86_64-${TRAVIS_TAG:-dev}.tar.gz linux-x86_64
+  # - go clean
+  # - env GOOS=linux GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir linux-x86_64
+  # - ln dnscrypt-proxy linux-x86_64/
+  # - ln ../LICENSE ../systemd/* dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-x86_64/
+  # - tar czpvf dnscrypt-proxy-linux_x86_64-${TRAVIS_TAG:-dev}.tar.gz linux-x86_64
 
-  - go clean
-  - env GOOS=linux GOARCH=arm go build -ldflags="-s -w"
-  - mkdir linux-arm
-  - ln dnscrypt-proxy linux-arm/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-arm/
-  - tar czpvf dnscrypt-proxy-linux_arm-${TRAVIS_TAG:-dev}.tar.gz linux-arm
+  # - go clean
+  # - env GOOS=linux GOARCH=arm go build -ldflags="-s -w"
+  # - mkdir linux-arm
+  # - ln dnscrypt-proxy linux-arm/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-arm/
+  # - tar czpvf dnscrypt-proxy-linux_arm-${TRAVIS_TAG:-dev}.tar.gz linux-arm
 
-  - go clean
-  - env GOOS=linux GOARCH=arm64 go build -ldflags="-s -w"
-  - mkdir linux-arm64
-  - ln dnscrypt-proxy linux-arm64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-arm64/
-  - tar czpvf dnscrypt-proxy-linux_arm64-${TRAVIS_TAG:-dev}.tar.gz linux-arm64
+  # - go clean
+  # - env GOOS=linux GOARCH=arm64 go build -ldflags="-s -w"
+  # - mkdir linux-arm64
+  # - ln dnscrypt-proxy linux-arm64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-arm64/
+  # - tar czpvf dnscrypt-proxy-linux_arm64-${TRAVIS_TAG:-dev}.tar.gz linux-arm64
 
-  - go clean
-  - env GOOS=linux GOARCH=mips GOMIPS=softfloat go build -ldflags="-s -w"
-  - mkdir linux-mips
-  - ln dnscrypt-proxy linux-mips/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mips/
-  - tar czpvf dnscrypt-proxy-linux_mips-${TRAVIS_TAG:-dev}.tar.gz linux-mips
+  # - go clean
+  # - env GOOS=linux GOARCH=mips GOMIPS=softfloat go build -ldflags="-s -w"
+  # - mkdir linux-mips
+  # - ln dnscrypt-proxy linux-mips/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mips/
+  # - tar czpvf dnscrypt-proxy-linux_mips-${TRAVIS_TAG:-dev}.tar.gz linux-mips
 
   - go clean
   - env GOOS=linux GOARCH=mipsle GOMIPS=softfloat go build -ldflags="-s -w"
@@ -122,40 +122,39 @@ script:
   - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mipsle/
   - tar czpvf dnscrypt-proxy-linux_mipsle-${TRAVIS_TAG:-dev}.tar.gz linux-mipsle
 
-  - go clean
-  - env GOOS=linux GOARCH=mips64 go build -ldflags="-s -w"
-  - mkdir linux-mips64
-  - ln dnscrypt-proxy linux-mips64/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mips64/
-  - tar czpvf dnscrypt-proxy-linux_mips64-${TRAVIS_TAG:-dev}.tar.gz linux-mips64
+  # - go clean
+  # - env GOOS=linux GOARCH=mips64 go build -ldflags="-s -w"
+  # - mkdir linux-mips64
+  # - ln dnscrypt-proxy linux-mips64/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mips64/
+  # - tar czpvf dnscrypt-proxy-linux_mips64-${TRAVIS_TAG:-dev}.tar.gz linux-mips64
 
-  - go clean
-  - env GOOS=linux GOARCH=mips64le go build -ldflags="-s -w"
-  - mkdir linux-mips64le
-  - ln dnscrypt-proxy linux-mips64le/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mips64le/
-  - tar czpvf dnscrypt-proxy-linux_mips64le-${TRAVIS_TAG:-dev}.tar.gz linux-mips64le
+  # - go clean
+  # - env GOOS=linux GOARCH=mips64le go build -ldflags="-s -w"
+  # - mkdir linux-mips64le
+  # - ln dnscrypt-proxy linux-mips64le/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt linux-mips64le/
+  # - tar czpvf dnscrypt-proxy-linux_mips64le-${TRAVIS_TAG:-dev}.tar.gz linux-mips64le
 
-  - go clean
-  - env GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w"
-  - mkdir macos
-  - ln dnscrypt-proxy macos/
-  - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt macos/
-  - tar czpvf dnscrypt-proxy-macos-${TRAVIS_TAG:-dev}.tar.gz macos
+  # - go clean
+  # - env GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w"
+  # - mkdir macos
+  # - ln dnscrypt-proxy macos/
+  # - ln ../LICENSE dnscrypt-proxy.toml forwarding-rules.txt blacklist.txt macos/
+  # - tar czpvf dnscrypt-proxy-macos-${TRAVIS_TAG:-dev}.tar.gz macos
 
-  - ls -l dnscrypt-proxy-*.tar.gz dnscrypt-proxy-*.zip
+  - ls -l dnscrypt-proxy-*.tar.gz
 
 deploy:
   provider: releases
   api_key:
-    secure: J3K/wo3oW/ySl6X4Zk5PX+EVy4fa0qa4fbpKNivogch5yjYw2pgrlSvwto9TM12Gxi4tTMKiWYK4YBapNf+tm501s4OyS1G1rJR1fZ+iyaHgGBLD+QppbivZt+P7Do56agSili68Zcgm7MQfZbvOq9z42z3AJ71+UNTJmTp63voaAuyOF/VdLsmJHMd/5nmFJH6mfMrgMs720GCWxFgdq3NRM2AdVldsp1YmNb4qKqIzunmfxqG9TqVlpq35tNOhWA/Ll3rbsiDVeUpBAW5ked/qHyGRkFVk44O6cPSFGe035Txx0JviBshGxsNSP+aJL9T55hIj1dmuk6g5uhPqABU/zcdJvXOv11oqJuV/DGHO31UfVN6u744LJY6Y1lkd+UUNiOJDPGC80+6M2GbP7BFMZiO5qnYkxzktnYg9b6zIPwmj96XZSniDTAn+qemJf2S8rzShvBtWX29Q4odIaCfFUY8i0muowQ4Vep5S5FqVG+r/rQTXOUIUsNv4r/gP/y5hdtOMC2r1VSvWk068upmW6ovCtcmTghSfYcLCG5r+g5OE2mKj9kbx6RQMspewk9+pvOhNZKXsn/AIvvDC4V46MaDjFkdYN0VbsYB5NH11DGCPH7vDwJnAzzMWnofCkiTG07dJYlLUnD9iUgYoNkrxivAgQKnDP8C6Ka0RGdk=
+    secure: MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAqJecNfpVsmPerSrmoyYE\nBJtVVi9zq+Mc6JWoJZL/zz3KtZOGuN/JqxvDo0NqkHGUHzRHmelAKGeaPl0C1Eel\nMewWXOhQYkGDKnaJX/oVgBQGrkPuch4F26AbpiOM1x3DzQ8ow28smUKzuXqxJ9g9\nY2ldRA5oi2qhS5Bw0c3B8yzjTW7KDz7IHRm5RgESI1WYs6a3GpsOLSA00h2v5DRw\neNua4E24Hfs1a6DgNtoz/Fy9e4LxjWiMs65Oi/rJ1Lhb+iBfVaHkii5o7XmcMkvL\n0zRyY/7zx7XfJTB7nl9RcQS0NnzUIYzDGIbVQH0Jt8XWKpWOt437PBOo5NV5DV+I\nIXumA0bPW4fwdnVKM9SWbPZCy6vjlce8W9GSVZtqa88x6gvSrgGuZpc8szWrP+Ou\nNuPJvdfDTYNC6iGLTRkVeKtr5C2bKB/5hARhyEWN9wzfJIjvUd4rbtXRkT/MHpCO\nDoyqRN5DD9UCZQoKKjVEFtZa1HwajPg0YJGgt451rkIX3g0rUStSpe0OZIV6IpAL\n04sd1Q/wyoqWSmhG2TJIgggDOvK+GR4Y2cAOaGTlrvCoUpMMXzbPRqd0bwvOaRXd\nb33Q1wCOy1sFFeqgSEQ8cqbDayoCJVMp0dH6TN/qgJnu2ptWzSZ71TGZv+ygx1/C\nhAdv3OB3eKf/tAO0+ztyDoUCAwEAAQ==
   file:
     - dnscrypt-proxy-*.tar.gz
-    - dnscrypt-proxy-*.zip
   file_glob: true
   skip_cleanup: true
   on:
-    repo: jedisct1/dnscrypt-proxy
+    repo: deemah/dnscrypt-proxy
     condition: "${TRAVIS_GO_VERSION} == 1.10rc1"
     tags: true
 
