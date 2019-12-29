@@ -1,0 +1,1 @@
+python generate-domains-blacklist.py > blacklist-rules.txt
