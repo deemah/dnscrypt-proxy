@@ -26,12 +26,14 @@ func (plugin *PluginGetSetPayloadSize) Reload() error {
 
 func (plugin *PluginGetSetPayloadSize) Eval(pluginsState *PluginsState, msg *dns.Msg) error {
 	pluginsState.originalMaxPayloadSize = 512 - ResponseOverhead
-	opt := msg.IsEdns0()
+	edns0 := msg.IsEdns0()
 	dnssec := false
-	if opt != nil {
-		pluginsState.originalMaxPayloadSize = Min(int(opt.UDPSize())-ResponseOverhead, pluginsState.originalMaxPayloadSize)
-		dnssec = opt.Do()
+	if edns0 != nil {
+		pluginsState.maxUnencryptedUDPSafePayloadSize = int(edns0.UDPSize())
+		pluginsState.originalMaxPayloadSize = Max(pluginsState.maxUnencryptedUDPSafePayloadSize-ResponseOverhead, pluginsState.originalMaxPayloadSize)
+		dnssec = edns0.Do()
 	}
+	var options *[]dns.EDNS0
 	pluginsState.dnssec = dnssec
 	pluginsState.maxPayloadSize = Min(MaxDNSUDPPacketSize-ResponseOverhead, Max(pluginsState.originalMaxPayloadSize, pluginsState.maxPayloadSize))
 	if pluginsState.maxPayloadSize > 512 {
@@ -39,10 +41,20 @@ func (plugin *PluginGetSetPayloadSize) Eval(pluginsState *PluginsState, msg *dns
 		for _, extra := range msg.Extra {
 			if extra.Header().Rrtype != dns.TypeOPT {
 				extra2 = append(extra2, extra)
+			} else if xoptions := &extra.(*dns.OPT).Option; len(*xoptions) > 0 && options == nil {
+				options = xoptions
 			}
 		}
 		msg.Extra = extra2
 		msg.SetEdns0(uint16(pluginsState.maxPayloadSize), dnssec)
+		if options != nil {
+			for _, extra := range msg.Extra {
+				if extra.Header().Rrtype == dns.TypeOPT {
+					extra.(*dns.OPT).Option = *options
+					break
+				}
+			}
+		}
 	}
 	return nil
 }

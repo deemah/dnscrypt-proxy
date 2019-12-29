@@ -4,18 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/jedisct1/dlog"
 	"github.com/miekg/dns"
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 type PluginQueryLog struct {
-	sync.Mutex
-	outFd         *os.File
+	logger        *lumberjack.Logger
 	format        string
 	ignoredQtypes []string
 }
@@ -29,13 +27,7 @@ func (plugin *PluginQueryLog) Description() string {
 }
 
 func (plugin *PluginQueryLog) Init(proxy *Proxy) error {
-	plugin.Lock()
-	defer plugin.Unlock()
-	outFd, err := os.OpenFile(proxy.queryLogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	plugin.outFd = outFd
+	plugin.logger = &lumberjack.Logger{LocalTime: true, MaxSize: proxy.logMaxSize, MaxAge: proxy.logMaxAge, MaxBackups: proxy.logMaxBackups, Filename: proxy.queryLogFile, Compress: true}
 	plugin.format = proxy.queryLogFormat
 	plugin.ignoredQtypes = proxy.queryLogIgnoredQtypes
 
@@ -51,11 +43,7 @@ func (plugin *PluginQueryLog) Reload() error {
 }
 
 func (plugin *PluginQueryLog) Eval(pluginsState *PluginsState, msg *dns.Msg) error {
-	questions := msg.Question
-	if len(questions) == 0 {
-		return nil
-	}
-	question := questions[0]
+	question := msg.Question[0]
 	qType, ok := dns.TypeToString[question.Qtype]
 	if !ok {
 		qType = string(qType)
@@ -73,26 +61,47 @@ func (plugin *PluginQueryLog) Eval(pluginsState *PluginsState, msg *dns.Msg) err
 	} else {
 		clientIPStr = (*pluginsState.clientAddr).(*net.TCPAddr).IP.String()
 	}
-	qName := StripTrailingDot(question.Name)
+	qName := pluginsState.qName
 
+	if pluginsState.cacheHit {
+		pluginsState.serverName = "-"
+	} else {
+		switch pluginsState.returnCode {
+		case PluginsReturnCodeSynth, PluginsReturnCodeCloak, PluginsReturnCodeParseError:
+			pluginsState.serverName = "-"
+		}
+	}
+	returnCode, ok := PluginsReturnCodeToString[pluginsState.returnCode]
+	if !ok {
+		returnCode = string(returnCode)
+	}
+
+	var requestDuration time.Duration
+	if !pluginsState.requestStart.IsZero() && !pluginsState.requestEnd.IsZero() {
+		requestDuration = pluginsState.requestEnd.Sub(pluginsState.requestStart)
+	}
 	var line string
 	if plugin.format == "tsv" {
 		now := time.Now()
 		year, month, day := now.Date()
 		hour, minute, second := now.Clock()
 		tsStr := fmt.Sprintf("[%d-%02d-%02d %02d:%02d:%02d]", year, int(month), day, hour, minute, second)
-		line = fmt.Sprintf("%s\t%s\t%s\t%s\n", tsStr, clientIPStr, StringQuote(qName), qType)
+		line = fmt.Sprintf("%s\t%s\t%s\t%s\t%s\t%dms\t%s\n", tsStr, clientIPStr, StringQuote(qName), qType, returnCode, requestDuration/time.Millisecond,
+			StringQuote(pluginsState.serverName))
 	} else if plugin.format == "ltsv" {
-		line = fmt.Sprintf("time:%d\thost:%s\tmessage:%s\ttype:%s\n",
-			time.Now().Unix(), clientIPStr, StringQuote(qName), qType)
+		cached := 0
+		if pluginsState.cacheHit {
+			cached = 1
+		}
+		line = fmt.Sprintf("time:%d\thost:%s\tmessage:%s\ttype:%s\treturn:%s\tcached:%d\tduration:%d\tserver:%s\n",
+			time.Now().Unix(), clientIPStr, StringQuote(qName), qType, returnCode, cached, requestDuration/time.Millisecond, StringQuote(pluginsState.serverName))
 	} else {
 		dlog.Fatalf("Unexpected log format: [%s]", plugin.format)
 	}
-	plugin.Lock()
-	if plugin.outFd == nil {
+	if plugin.logger == nil {
 		return errors.New("Log file not initialized")
 	}
-	plugin.outFd.WriteString(line)
-	defer plugin.Unlock()
+	_, _ = plugin.logger.Write([]byte(line))
+
 	return nil
 }

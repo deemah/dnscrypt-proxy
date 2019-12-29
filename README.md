@@ -1,105 +1,49 @@
-[![Build Status](https://travis-ci.org/jedisct1/dnscrypt-proxy.svg?branch=master)](https://travis-ci.org/jedisct1/dnscrypt-proxy?branch=master)
+# ![dnscrypt-proxy 2](https://raw.github.com/dnscrypt/dnscrypt-proxy/master/logo.png?3)
 
-# ![dnscrypt-proxy 2](https://raw.github.com/jedisct1/dnscrypt-proxy/master/logo.png?2)
+[![Financial Contributors on Open Collective](https://opencollective.com/dnscrypt/all/badge.svg?label=financial+contributors)](https://opencollective.com/dnscrypt) [![DNSCrypt-Proxy Release](https://img.shields.io/github/release/dnscrypt/dnscrypt-proxy.svg?label=Latest%20Release&style=popout)](https://github.com/dnscrypt/dnscrypt-proxy/releases/latest)  [![Build Status](https://travis-ci.com/dnscrypt/dnscrypt-proxy.svg?branch=master)](https://travis-ci.com/dnscrypt/dnscrypt-proxy?branch=master) [![#dnscrypt-proxy:matrix.org](https://img.shields.io/matrix/dnscrypt-proxy:matrix.org.svg?label=DNSCrypt-Proxy%20Matrix%20Chat&server_fqdn=matrix.org&style=popout)](https://matrix.to/#/#dnscrypt-proxy:matrix.org)
 
-A flexible DNS proxy, with support for modern encrypted DNS protocols such as [DNSCrypt v2](https://github.com/DNSCrypt/dnscrypt-protocol/blob/master/DNSCRYPT-V2-PROTOCOL.txt) and DNS-over-HTTP/2.
+## Overview
 
-## [dnscrypt-proxy 2.0.0beta11-2 is available for download!](https://github.com/jedisct1/dnscrypt-proxy/releases/latest)
+A flexible DNS proxy, with support for modern encrypted DNS protocols such as [DNSCrypt v2](https://dnscrypt.info/protocol), [DNS-over-HTTPS](https://www.rfc-editor.org/rfc/rfc8484.txt) and [Anonymized DNSCrypt](https://github.com/DNSCrypt/dnscrypt-protocol/blob/master/ANONYMIZED-DNSCRYPT.txt).
 
-## Installation
+* **[dnscrypt-proxy documentation](https://dnscrypt.info/doc) ← Start here**
+* [DNSCrypt project home page](https://dnscrypt.info/)
+* [DNS-over-HTTPS and DNSCrypt resolvers](https://dnscrypt.info/public-servers)
+* [Server and client implementations](https://dnscrypt.info/implementations)
+* [DNS stamps](https://dnscrypt.info/stamps)
+* [FAQ](https://dnscrypt.info/faq)
 
-### How do I install DNSCrypt?
+## [Download the latest release](https://github.com/dnscrypt/dnscrypt-proxy/releases/latest)
 
-You can't. Because [DNSCrypt](https://github.com/DNSCrypt/dnscrypt-protocol/blob/master/DNSCRYPT-V2-PROTOCOL.txt) is just a specification.
+Available as source code and pre-built binaries for most operating systems and architectures (see below).
 
-That specification has been implemented in software such as [unbound](https://www.unbound.net/), [dnsdist](https://dnsdist.org/), [dnscrypt-wrapper](https://github.com/cofyc/dnscrypt-wrapper) and [dnscrypt-proxy](https://github.com/jedisct1/dnscrypt-proxy).
+## Features
 
-dnscrypt-proxy is a flexible DNS proxy. It runs on your computer or router, and can locally block unwanted content, reveal where your devices are silently sending data to, make applications feel faster by caching DNS responses, and improve security and confidentiality by communicating to upstream DNS servers over secure channels.
-
-### Setting up dnscrypt-proxy
-
-1. Modify the [`dnscrypt-proxy.toml`](https://raw.githubusercontent.com/jedisct1/dnscrypt-proxy/master/dnscrypt-proxy/dnscrypt-proxy.toml) configuration file according to your needs.
-2. Make sure that nothing else is already listening to port 53 on your system and run (in a console with elevated privileges on Windows) the `dnscrypt-proxy` application. Change your DNS settings to the configured IP address and check that everything works as expected. A DNS query for `resolver.00f.net` should return one of the chosen DNS servers instead of your ISP's resolver.
-3. Register as a system service (see below).
-
-### Installing as a system service (Windows, Linux, MacOS)
-
-With administrator privileges, type `dnscrypt-proxy -service install` to register dnscrypt-proxy as a system service, and `dnscrypt-proxy -service start` to start it.
-
-On Windows, this is not even required: you can just double-click on `server-install.bat` to install the service.
-
-Done. It will automatically start at boot.
-
-This setup procedure is compatible with Windows, Linux (systemd, Upstart, SysV), and macOS (launchd).
-
-Other commands include `stop`, `restart` (useful after a configuration change) and `uninstall`.
-
-### Running it as a non-root user on Linux
-
-The following command adds the required attributes to the dnscrypt-proxy file so that it can run as a non-root user:
-
-```sh
-sudo setcap cap_net_bind_service=+pe dnscrypt-proxy
-```
-
-## Current status/features
-
-The current 2.0.0 beta version includes all the major features from dnscrypt-proxy 1.9.5 (support for dnscrypt v2, synthetic IPv6 responses, logging, blocking, forwarding and caching), with improved reliability, flexbility, usability and performance.
-
-| Features                                                    | dnscrypt-proxy 1.x                                                           | dnscrypt-proxy 2.x                                                                                            |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Status                                                      | Old PoC, barely maintained any more                                          | Very new, but quickly evolving                                                                                |
-| Code quality                                                | Big ugly mess                                                                | Readable, easy to work on                                                                                     |
-| Reliability                                                 | Poor, due to completely broken handling of edge cases                        | Excellent                                                                                                     |
-| Security                                                    | Written in C, bundles patched versions from old branches of system libraries | Written in standard and portable Go                                                                           |
-| Dependencies                                                | Specific versions of dnscrypt-proxy, libldns and libtool                     | None                                                                                                          |
-| Upstream connections using TCP                              | Catastrophic, requires client retries                                        | Implemented as anyone would expect, works well with TOR                                                       |
-| XChaCha20 support                                           | Only if compiled with recent versions of libsodium                           | Yes, always available                                                                                         |
-| Support of links with small MTU                             | Unreliable due to completely broken padding                                  | Reliable, properly implemented                                                                                |
-| Support for multiple servers                                | Nonexistent                                                                  | Yes, with automatic failover and load-balancing                                                               |
-| Custom additions                                            | C API, requires libldns for sanity                                           | Simple Go structures using miekg/dns                                                                          |
-| AAAA blocking for IPv4-only networks                        | Yes                                                                          | Yes                                                                                                           |
-| DNS caching                                                 | Yes, with ugly hacks for DNSSEC support                                      | Yes, without ugly hacks                                                                                       |
-| EDNS support                                                | Broken with custom records                                                   | Yes                                                                                                           |
-| Asynchronous filters                                        | Lol, no, filters block everything                                            | Of course, thanks to Go                                                                                       |
-| Session-local storage for extensions                        | Impossible                                                                   | Yes                                                                                                           |
-| Multicore support                                           | Nonexistent                                                                  | Yes, thanks to Go                                                                                             |
-| Efficient padding of queries                                | Couldn't be any worse                                                        | Yes                                                                                                           |
-| Multiple local sockets                                      | Impossible                                                                   | Of course. IPv4, IPv6, as many as you like                                                                    |
-| Automatically picks the fastest servers                     | Lol, it supports only one at a time, anyway                                  | Yes, out of the box                                                                                           |
-| Official, always up-to-date pre-built libraries             | None                                                                         | Yes, for many platforms. See below.                                                                           |
-| Automatically downloads and verifies servers lists          | No. Requires custom scripts, cron jobs and dependencies (minisign)           | Yes, built-in, including signature verification                                                               |
-| Advanced expressions in blacklists (ads*.example[0-9]*.com) | No                                                                           | Yes                                                                                                           |
-| Forwarding with load balancing                              | No                                                                           | Yes                                                                                                           |
-| Built-in system installer                                   | Only on Windows                                                              | Install/uninstall/start/stop/restart as a service on Windows, Linux/(systemd,Upstart,SysV), and macOS/launchd |
-| Built-in servers latency benchmark                          | No                                                                           | Yes                                                                                                           |
-| Query type filter: only log a relevant set of query types   | No                                                                           | Yes                                                                                                           |
-| Support for the Windows Event Log                           | No                                                                           | Yes                                                                                                           |
-| Log suspicious queries (leading to NXDOMAIN)                | No                                                                           | Yes                                                                                                           |
-| IP filtering                                                | Yes, but can be bypassed due to a vulnerability                              | Yes, doesn't have the vulnerability from v1                                                                   |
-| Systemd support                                             | Yes, but don't complain about it                                             | Yes, but don't complain about it either                                                                       |
-| Stamps, as a simple way to provide server parameters        | No                                                                           | Yes                                                                                                           |
-| Supported protocols                                         | DNSCrypt v1, DNSCrypt v2                                                     | DNSCrypt v1, DNSCrypt v2, DNS-over-HTTP/2                                                                     |
-
-## Experimental
-
-* [DNS-over-HTTP/2 (DoH)](https://datatracker.ietf.org/wg/doh/about/), the successor to DNS-over-TLS
-
-Using DoH currently requires a working DNS configuration on the proxy host (DNS server host names have to be resolved).
-If you use DoH, add the IP address of the servers to your `hosts` file or equivalent.
-
-## Planned features
-
-* Offline responses
-* Local DNSSEC validation
-* Support for the V1 plugin API
-* Real documentation
+* DNS traffic encryption and authentication. Supports DNS-over-HTTPS (DoH) using TLS 1.3, DNSCrypt and Anonymized DNS
+* Client IP addresses can be hidden using Tor, SOCKS proxies or Anonymized DNS relays
+* DNS query monitoring, with separate log files for regular and suspicious queries
+* Filtering: block ads, malware, and other unwanted content. Compatible with all DNS services
+* Time-based filtering, with a flexible weekly schedule
+* Transparent redirection of specific domains to specific resolvers
+* DNS caching, to reduce latency and improve privacy
+* Local IPv6 blocking to reduce latency on IPv4-only networks
+* Load balancing: pick a set of resolvers, dnscrypt-proxy will automatically measure and keep track of their speed, and balance the traffic across the fastest available ones.
+* Cloaking: like a `HOSTS` file on steroids, that can return preconfigured addresses for specific names, or resolve and return the IP address of other names. This can be used for local development as well as to enforce safe search results on Google, Yahoo, DuckDuckGo and Bing
+* Automatic background updates of resolvers lists
+* Can force outgoing connections to use TCP
+* Compatible with DNSSEC
+* Includes a local DoH server in order to support ESNI
 
 ## Pre-built binaries
 
 Up-to-date, pre-built binaries are available for:
 
+* Android/arm
+* Android/arm64
+* Android/x86
+* Android/x86_64
 * Dragonfly BSD
+* FreeBSD/arm
 * FreeBSD/x86
 * FreeBSD/x86_64
 * Linux/arm
@@ -117,3 +61,35 @@ Up-to-date, pre-built binaries are available for:
 * OpenBSD/x86_64
 * Windows
 * Windows 64 bit
+
+How to use these files, as well as how to verify their signatures, are documented in the [installation instructions](https://github.com/dnscrypt/dnscrypt-proxy/wiki/installation).
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/dnscrypt/dnscrypt-proxy/graphs/contributors"><img src="https://opencollective.com/dnscrypt/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/dnscrypt/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/dnscrypt"><img src="https://opencollective.com/dnscrypt/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/dnscrypt/contribute)]
+
+<a href="https://opencollective.com/dnscrypt/organization/0/website"><img src="https://opencollective.com/dnscrypt/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/1/website"><img src="https://opencollective.com/dnscrypt/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/2/website"><img src="https://opencollective.com/dnscrypt/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/3/website"><img src="https://opencollective.com/dnscrypt/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/4/website"><img src="https://opencollective.com/dnscrypt/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/5/website"><img src="https://opencollective.com/dnscrypt/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/6/website"><img src="https://opencollective.com/dnscrypt/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/7/website"><img src="https://opencollective.com/dnscrypt/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/8/website"><img src="https://opencollective.com/dnscrypt/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/dnscrypt/organization/9/website"><img src="https://opencollective.com/dnscrypt/organization/9/avatar.svg"></a>

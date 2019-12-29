@@ -27,3 +27,16 @@ tracker.*
 # start.
 
 eth0.me
+
+# ibpxl.com is a tracker that seems to frequently have issues, causing
+# page loads to stall.
+
+ibpxl.com
+
+# ditto for that one
+
+internetbrands.com
+
+# Ubuntu's motd script sends way too much information to Canonical
+
+motd.ubuntu.com

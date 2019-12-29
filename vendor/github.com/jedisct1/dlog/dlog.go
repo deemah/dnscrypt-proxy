@@ -22,12 +22,18 @@ type globals struct {
 	systemLogger   *systemLogger
 	fileName       *string
 	outFd          *os.File
+	lastMessage    string
+	lastOccurrence time.Time
+	occurrences    uint64
 }
 
 var (
 	_globals = globals{
-		logLevel: SeverityLast,
-		appName:  "-",
+		logLevel:       SeverityLast,
+		appName:        "-",
+		lastMessage:    "",
+		lastOccurrence: time.Now(),
+		occurrences:    0,
 	}
 )
 
@@ -40,6 +46,11 @@ const (
 	SeverityCritical
 	SeverityFatal
 	SeverityLast
+)
+
+const (
+	floodDelay      = 5 * time.Second
+	floodMinRepeats = 3
 )
 
 var SeverityName = []string{
@@ -169,11 +180,33 @@ func UseLogFile(fileName string) {
 	_globals.Unlock()
 }
 
+func GetFileDescriptor() (*os.File) {
+	_globals.Lock()
+	createFileDescriptor()
+	_globals.Unlock()
+	return _globals.outFd
+}
+
+func SetFileDescriptor(fd *os.File) {
+	_globals.Lock()
+	_globals.outFd = fd
+	_globals.Unlock()
+}
+
+func createFileDescriptor() {
+	if _globals.fileName != nil && len(*_globals.fileName) > 0 && _globals.outFd == nil {
+		outFd, err := os.OpenFile(*_globals.fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+		if err == nil {
+			_globals.outFd = outFd
+		}
+	}
+}
+
 func logf(severity Severity, format string, args ...interface{}) {
 	if severity < _globals.logLevel.get() {
 		return
 	}
-	now := time.Now()
+	now := time.Now().Local()
 	year, month, day := now.Date()
 	hour, minute, second := now.Clock()
 	message := fmt.Sprintf(format, args...)
@@ -183,18 +216,25 @@ func logf(severity Severity, format string, args ...interface{}) {
 	}
 	_globals.Lock()
 	defer _globals.Unlock()
+	if _globals.lastMessage == message {
+		if time.Since(_globals.lastOccurrence) < floodDelay {
+			_globals.occurrences++
+			if _globals.occurrences > floodMinRepeats {
+				return
+			}
+		}
+	} else {
+		_globals.occurrences = 0
+		_globals.lastMessage = message
+	}
+	_globals.lastOccurrence = now
 	if *_globals.useSyslog && _globals.systemLogger == nil {
 		systemLogger, err := newSystemLogger(_globals.appName, _globals.syslogFacility)
 		if err == nil {
 			_globals.systemLogger = systemLogger
 		}
 	}
-	if _globals.fileName != nil && len(*_globals.fileName) > 0 && _globals.outFd == nil {
-		outFd, err := os.OpenFile(*_globals.fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-		if err == nil {
-			_globals.outFd = outFd
-		}
-	}
+	createFileDescriptor()
 	if _globals.systemLogger != nil {
 		(*_globals.systemLogger).writeString(severity, message)
 	} else {

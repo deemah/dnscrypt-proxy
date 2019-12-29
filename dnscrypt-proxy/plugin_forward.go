@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"strings"
@@ -31,7 +30,7 @@ func (plugin *PluginForward) Description() string {
 
 func (plugin *PluginForward) Init(proxy *Proxy) error {
 	dlog.Noticef("Loading the set of forwarding rules from [%s]", proxy.forwardFile)
-	bin, err := ioutil.ReadFile(proxy.forwardFile)
+	bin, err := ReadTextFile(proxy.forwardFile)
 	if err != nil {
 		return err
 	}
@@ -72,19 +71,15 @@ func (plugin *PluginForward) Reload() error {
 }
 
 func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) error {
-	questions := msg.Question
-	if len(questions) != 1 {
-		return nil
-	}
-	question := strings.ToLower(StripTrailingDot(questions[0].Name))
-	questionLen := len(question)
+	qName := pluginsState.qName
+	qNameLen := len(qName)
 	var servers []string
 	for _, candidate := range plugin.forwardMap {
 		candidateLen := len(candidate.domain)
-		if candidateLen > questionLen {
+		if candidateLen > qNameLen {
 			continue
 		}
-		if question[questionLen-candidateLen:] == candidate.domain && (candidateLen == questionLen || (question[questionLen-candidateLen-1] == '.')) {
+		if qName[qNameLen-candidateLen:] == candidate.domain && (candidateLen == qNameLen || (qName[qNameLen-candidateLen-1] == '.')) {
 			servers = candidate.servers
 			break
 		}
@@ -93,11 +88,16 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 		return nil
 	}
 	server := servers[rand.Intn(len(servers))]
+	pluginsState.serverName = server
 	respMsg, err := dns.Exchange(msg, server)
 	if err != nil {
 		return err
 	}
+	if edns0 := respMsg.IsEdns0(); edns0 == nil || !edns0.Do() {
+		respMsg.AuthenticatedData = false
+	}
 	pluginsState.synthResponse = respMsg
 	pluginsState.action = PluginsActionSynth
+	pluginsState.returnCode = PluginsReturnCodeForward
 	return nil
 }
