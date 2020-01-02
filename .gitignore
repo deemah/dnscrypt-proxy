@@ -10,3 +10,5 @@
 dnscrypt-proxy/dnscrypt-proxy2
 dnscrypt-proxy/dnscrypt-proxy
 .idea
+.vscode
+/utils/generate-domains-blacklists/blacklist-rules.txt
