@@ -44,7 +44,7 @@ github.com/jedisct1/xsecretbox
 github.com/k-sone/critbitgo
 # github.com/kardianos/service v1.0.1-0.20191211031725-3c356ae54c8a
 github.com/kardianos/service
-# github.com/miekg/dns v1.1.26
+# github.com/miekg/dns v1.1.27
 github.com/miekg/dns
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
@@ -55,7 +55,7 @@ github.com/powerman/check
 # github.com/smartystreets/goconvey v1.6.4
 github.com/smartystreets/goconvey/convey/gotest
 github.com/smartystreets/goconvey/convey/reporting
-# golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+# golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
@@ -65,7 +65,7 @@ golang.org/x/crypto/nacl/box
 golang.org/x/crypto/nacl/secretbox
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/salsa20/salsa
-# golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+# golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
 golang.org/x/net/bpf
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -77,7 +77,7 @@ golang.org/x/net/internal/socks
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8
+# golang.org/x/sys v0.0.0-20200113162924-86b910548bc1
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows

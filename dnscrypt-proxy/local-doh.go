@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/jedisct1/dlog"
+	"github.com/miekg/dns"
 )
 
 type localDoHHandler struct {
@@ -52,15 +52,26 @@ func (handler localDoHHandler) ServeHTTP(writer http.ResponseWriter, request *ht
 		writer.WriteHeader(500)
 		return
 	}
+	msg := dns.Msg{}
+	if err := msg.Unpack(packet); err != nil {
+		writer.WriteHeader(500)
+		return
+	}
 	padLen := 127 - (len(response)+127)&127
+	paddedResponse, err := addEDNS0PaddingIfNoneFound(&msg, response, padLen)
+	if err != nil {
+		return
+	}
 	writer.Header().Set("Content-Type", dataType)
-	writer.Header().Set("X-Pad", strings.Repeat("X", padLen))
 	writer.WriteHeader(200)
-	writer.Write(response)
+	writer.Write(paddedResponse)
 }
 
 func (proxy *Proxy) localDoHListener(acceptPc *net.TCPListener) {
 	defer acceptPc.Close()
+	if len(proxy.localDoHCertFile) == 0 || len(proxy.localDoHCertKeyFile) == 0 {
+		dlog.Fatal("A certificate and a key are required to start a local DoH service")
+	}
 	noh2 := make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 	httpServer := &http.Server{
 		ReadTimeout:  proxy.timeout,

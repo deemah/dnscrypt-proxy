@@ -11,7 +11,7 @@ require (
 	github.com/facebookgo/atomicfile v0.0.0-20151019160806-2de1f203e7d5 // indirect
 	github.com/facebookgo/pidfile v0.0.0-20150612191647-f242e2999868
 	github.com/hashicorp/go-immutable-radix v1.1.0
-	github.com/hashicorp/golang-lru v0.5.3
+	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hectane/go-acl v0.0.0-20190604041725-da78bae5fc95
 	github.com/jedisct1/dlog v0.0.0-20190909160351-692385b00b84
 	github.com/jedisct1/go-clocksmith v0.0.0-20190707124905-73e087c7979c
@@ -20,11 +20,12 @@ require (
 	github.com/jedisct1/xsecretbox v0.0.0-20190909160646-b731c21297f9
 	github.com/k-sone/critbitgo v1.4.0
 	github.com/kardianos/service v1.0.1-0.20191211031725-3c356ae54c8a
-	github.com/miekg/dns v1.1.26
+	github.com/miekg/dns v1.1.27
 	github.com/powerman/check v1.2.1
-	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
-	golang.org/x/sys v0.0.0-20191228213918-04cbcbbfeed8
+	golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d
+	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
+	golang.org/x/sys v0.0.0-20200113162924-86b910548bc1
+	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
