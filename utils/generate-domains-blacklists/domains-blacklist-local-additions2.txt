@@ -26,3 +26,6 @@ vidroll.ru
 *.googlesyndication.com
 *.reyden-x.com
 *.adbetclickin.pink
+*.synthez.net
+*.1e100.net
+h2-eu1.layer6.net
