@@ -1,1 +1,1 @@
-python generate-domains-blacklist.py > blacklist-rules.txt
+python generate-domains-blacklist.py > dnscrypt-proxy-blacklist.txt
