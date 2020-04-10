@@ -1,2 +1,4 @@
 graph.facebook.com
 s3.amazonaws.com
+playrix.com
+worldometers.info
