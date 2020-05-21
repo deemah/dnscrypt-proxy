@@ -42,7 +42,7 @@ func (plugin *PluginForward) Init(proxy *Proxy) error {
 		domain, serversStr, ok := StringTwoFields(line)
 		if !ok {
 			return fmt.Errorf(
-				"syntax error for a forwarding rule at line %d. Expected syntax: example.com 9.9.9.9,8.8.8.8",
+				"Syntax error for a forwarding rule at line %d. Expected syntax: example.com 9.9.9.9,8.8.8.8",
 				1+lineNo,
 			)
 		}
@@ -93,7 +93,7 @@ func (plugin *PluginForward) Eval(pluginsState *PluginsState, msg *dns.Msg) erro
 	}
 	server := servers[rand.Intn(len(servers))]
 	pluginsState.serverName = server
-	client := dns.Client{Net: pluginsState.serverProto}
+	client := dns.Client{Net: pluginsState.serverProto, Timeout: pluginsState.timeout}
 	respMsg, _, err := client.Exchange(msg, server)
 	if err != nil {
 		return err
