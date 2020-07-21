@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/facebookgo/pidfile"
 	"github.com/jedisct1/dlog"
 	stamps "github.com/jedisct1/go-dnsstamps"
 	netproxy "golang.org/x/net/proxy"
@@ -30,6 +29,7 @@ const (
 type Config struct {
 	LogLevel                 int            `toml:"log_level"`
 	LogFile                  *string        `toml:"log_file"`
+	LogFileLatest            bool           `toml:"log_file_latest"`
 	UseSyslog                bool           `toml:"use_syslog"`
 	ServerNames              []string       `toml:"server_names"`
 	DisabledServerNames      []string       `toml:"disabled_server_names"`
@@ -60,9 +60,12 @@ type Config struct {
 	CloakTTL                 uint32                      `toml:"cloak_ttl"`
 	QueryLog                 QueryLogConfig              `toml:"query_log"`
 	NxLog                    NxLogConfig                 `toml:"nx_log"`
-	BlockName                BlockNameConfig             `toml:"blacklist"`
-	WhitelistName            WhitelistNameConfig         `toml:"whitelist"`
-	BlockIP                  BlockIPConfig               `toml:"ip_blacklist"`
+	BlockName                BlockNameConfig             `toml:"blocked_names"`
+	BlockNameLegacy          BlockNameConfigLegacy       `toml:"blacklist"`
+	WhitelistNameLegacy      WhitelistNameConfigLegacy   `toml:"whitelist"`
+	AllowedName              AllowedNameConfig           `toml:"allowed_names"`
+	BlockIP                  BlockIPConfig               `toml:"blocked_ips"`
+	BlockIPLegacy            BlockIPConfigLegacy         `toml:"ip_blacklist"`
 	ForwardFile              string                      `toml:"forwarding_rules"`
 	CloakFile                string                      `toml:"cloaking_rules"`
 	StaticsConfig            map[string]StaticConfig     `toml:"static"`
@@ -94,11 +97,14 @@ type Config struct {
 	QueryMeta                []string                    `toml:"query_meta"`
 	AnonymizedDNS            AnonymizedDNSConfig         `toml:"anonymized_dns"`
 	DoHClientX509Auth        DoHClientX509AuthConfig     `toml:"doh_client_x509_auth"`
+	DoHClientX509AuthLegacy  DoHClientX509AuthConfig     `toml:"tls_client_auth"`
+	DNS64                    DNS64Config                 `toml:"dns64"`
 }
 
 func newConfig() Config {
 	return Config{
 		LogLevel:                 int(dlog.LogLevel()),
+		LogFileLatest:            true,
 		ListenAddresses:          []string{"127.0.0.1:53"},
 		LocalDoH:                 LocalDoHConfig{Path: "/dns-query"},
 		Timeout:                  5000,
@@ -170,18 +176,36 @@ type NxLogConfig struct {
 }
 
 type BlockNameConfig struct {
+	File    string `toml:"blocked_names_file"`
+	LogFile string `toml:"log_file"`
+	Format  string `toml:"log_format"`
+}
+
+type BlockNameConfigLegacy struct {
 	File    string `toml:"blacklist_file"`
 	LogFile string `toml:"log_file"`
 	Format  string `toml:"log_format"`
 }
 
-type WhitelistNameConfig struct {
+type WhitelistNameConfigLegacy struct {
 	File    string `toml:"whitelist_file"`
 	LogFile string `toml:"log_file"`
 	Format  string `toml:"log_format"`
 }
 
+type AllowedNameConfig struct {
+	File    string `toml:"allowed_names_file"`
+	LogFile string `toml:"log_file"`
+	Format  string `toml:"log_format"`
+}
+
 type BlockIPConfig struct {
+	File    string `toml:"blocked_ips_file"`
+	LogFile string `toml:"log_file"`
+	Format  string `toml:"log_format"`
+}
+
+type BlockIPConfigLegacy struct {
 	File    string `toml:"blacklist_file"`
 	LogFile string `toml:"log_file"`
 	Format  string `toml:"log_format"`
@@ -193,8 +217,9 @@ type AnonymizedDNSRouteConfig struct {
 }
 
 type AnonymizedDNSConfig struct {
-	Routes           []AnonymizedDNSRouteConfig `toml:"routes"`
-	SkipIncompatible bool                       `toml:"skip_incompatible"`
+	Routes             []AnonymizedDNSRouteConfig `toml:"routes"`
+	SkipIncompatible   bool                       `toml:"skip_incompatible"`
+	DirectCertFallback bool                       `toml:"direct_cert_fallback"`
 }
 
 type BrokenImplementationsConfig struct {
@@ -226,10 +251,16 @@ type TLSClientAuthCredsConfig struct {
 	ServerName string `toml:"server_name"`
 	ClientCert string `toml:"client_cert"`
 	ClientKey  string `toml:"client_key"`
+	RootCA     string `toml:"root_ca"`
 }
 
 type DoHClientX509AuthConfig struct {
 	Creds []TLSClientAuthCredsConfig `toml:"creds"`
+}
+
+type DNS64Config struct {
+	Prefixes  []string `toml:"prefix"`
+	Resolvers []string `toml:"resolver"`
 }
 
 type ConfigFlags struct {
@@ -283,6 +314,7 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	if dlog.LogLevel() <= dlog.SeverityDebug && os.Getenv("DEBUG") == "" {
 		dlog.SetLogLevel(dlog.SeverityInfo)
 	}
+	dlog.TruncateLogFile(config.LogFileLatest)
 	if config.UseSyslog {
 		dlog.UseSyslog(true)
 	} else if config.LogFile != nil {
@@ -446,6 +478,15 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	proxy.nxLogFile = config.NxLog.File
 	proxy.nxLogFormat = config.NxLog.Format
 
+	if len(config.BlockName.File) > 0 && len(config.BlockNameLegacy.File) > 0 {
+		dlog.Fatal("Don't specify both [blocked_names] and [blacklist] sections - Update your config file.")
+	}
+	if len(config.BlockNameLegacy.File) > 0 {
+		dlog.Notice("Use of [blacklist] is deprecated - Update your config file.")
+		config.BlockName.File = config.BlockNameLegacy.File
+		config.BlockName.Format = config.BlockNameLegacy.Format
+		config.BlockName.LogFile = config.BlockNameLegacy.LogFile
+	}
 	if len(config.BlockName.Format) == 0 {
 		config.BlockName.Format = "tsv"
 	} else {
@@ -458,18 +499,36 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	proxy.blockNameFormat = config.BlockName.Format
 	proxy.blockNameLogFile = config.BlockName.LogFile
 
-	if len(config.WhitelistName.Format) == 0 {
-		config.WhitelistName.Format = "tsv"
+	if len(config.AllowedName.File) > 0 && len(config.WhitelistNameLegacy.File) > 0 {
+		dlog.Fatal("Don't specify both [whitelist] and [allowed_names] sections - Update your config file.")
+	}
+	if len(config.WhitelistNameLegacy.File) > 0 {
+		dlog.Notice("Use of [whitelist] is deprecated - Update your config file.")
+		config.AllowedName.File = config.WhitelistNameLegacy.File
+		config.AllowedName.Format = config.WhitelistNameLegacy.Format
+		config.AllowedName.LogFile = config.WhitelistNameLegacy.LogFile
+	}
+	if len(config.AllowedName.Format) == 0 {
+		config.AllowedName.Format = "tsv"
 	} else {
-		config.WhitelistName.Format = strings.ToLower(config.WhitelistName.Format)
+		config.AllowedName.Format = strings.ToLower(config.AllowedName.Format)
 	}
-	if config.WhitelistName.Format != "tsv" && config.WhitelistName.Format != "ltsv" {
-		return errors.New("Unsupported whitelist log format")
+	if config.AllowedName.Format != "tsv" && config.AllowedName.Format != "ltsv" {
+		return errors.New("Unsupported allowed_names log format")
 	}
-	proxy.whitelistNameFile = config.WhitelistName.File
-	proxy.whitelistNameFormat = config.WhitelistName.Format
-	proxy.whitelistNameLogFile = config.WhitelistName.LogFile
+	proxy.whitelistNameFile = config.AllowedName.File
+	proxy.whitelistNameFormat = config.AllowedName.Format
+	proxy.whitelistNameLogFile = config.AllowedName.LogFile
 
+	if len(config.BlockIP.File) > 0 && len(config.BlockIPLegacy.File) > 0 {
+		dlog.Fatal("Don't specify both [blocked_ips] and [ip_blacklist] sections - Update your config file.")
+	}
+	if len(config.BlockIPLegacy.File) > 0 {
+		dlog.Notice("Use of [ip_blacklist] is deprecated - Update your config file.")
+		config.BlockIP.File = config.BlockIPLegacy.File
+		config.BlockIP.Format = config.BlockIPLegacy.Format
+		config.BlockIP.LogFile = config.BlockIPLegacy.LogFile
+	}
 	if len(config.BlockIP.Format) == 0 {
 		config.BlockIP.Format = "tsv"
 	} else {
@@ -499,13 +558,18 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		proxy.routes = &routes
 	}
 	proxy.skipAnonIncompatbibleResolvers = config.AnonymizedDNS.SkipIncompatible
+	proxy.anonDirectCertFallback = config.AnonymizedDNS.DirectCertFallback
 
+	if config.DoHClientX509AuthLegacy.Creds != nil {
+		dlog.Fatal("[tls_client_auth] has been renamed to [doh_client_x509_auth] - Update your config file.")
+	}
 	configClientCreds := config.DoHClientX509Auth.Creds
 	creds := make(map[string]DOHClientCreds)
 	for _, configClientCred := range configClientCreds {
 		credFiles := DOHClientCreds{
 			clientCert: configClientCred.ClientCert,
 			clientKey:  configClientCred.ClientKey,
+			rootCA:     configClientCred.RootCA,
 		}
 		creds[configClientCred.ServerName] = credFiles
 	}
@@ -515,6 +579,9 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	config.BrokenImplementations.FragmentsBlocked = append(config.BrokenImplementations.FragmentsBlocked, config.BrokenImplementations.BrokenQueryPadding...)
 
 	proxy.serversBlockingFragments = config.BrokenImplementations.FragmentsBlocked
+
+	proxy.dns64Prefixes = config.DNS64.Prefixes
+	proxy.dns64Resolvers = config.DNS64.Resolvers
 
 	if *flags.ListAll {
 		config.ServerNames = nil
@@ -541,26 +608,23 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		netprobeAddress = config.FallbackResolvers[0]
 	}
 	proxy.showCerts = *flags.ShowCerts || len(os.Getenv("SHOW_CERTS")) > 0
-	if proxy.showCerts {
-		proxy.listenAddresses = nil
-	}
 	if !proxy.child {
 		dlog.Noticef("dnscrypt-proxy %s", AppVersion)
 	}
-	if err := NetProbe(netprobeAddress, netprobeTimeout); err != nil {
-		return err
+	if !*flags.Check && !*flags.ShowCerts && !*flags.List && !*flags.ListAll {
+		if err := NetProbe(netprobeAddress, netprobeTimeout); err != nil {
+			return err
+		}
+		for _, listenAddrStr := range proxy.listenAddresses {
+			proxy.addDNSListener(listenAddrStr)
+		}
+		for _, listenAddrStr := range proxy.localDoHListenAddresses {
+			proxy.addLocalDoHListener(listenAddrStr)
+		}
+		if err := proxy.addSystemDListeners(); err != nil {
+			dlog.Fatal(err)
+		}
 	}
-
-	for _, listenAddrStr := range proxy.listenAddresses {
-		proxy.addDNSListener(listenAddrStr)
-	}
-	for _, listenAddrStr := range proxy.localDoHListenAddresses {
-		proxy.addLocalDoHListener(listenAddrStr)
-	}
-	if err := proxy.addSystemDListeners(); err != nil {
-		dlog.Fatal(err)
-	}
-	_ = pidfile.Write()
 	// if 'userName' is set and we are the parent process drop privilege and exit
 	if len(proxy.userName) > 0 && !proxy.child {
 		proxy.dropPrivilege(proxy.userName, FileDescriptors)
@@ -659,7 +723,8 @@ func (config *Config) loadSources(proxy *Proxy) error {
 	if config.SourceRequireNoFilter {
 		requiredProps |= stamps.ServerInformalPropertyNoFilter
 	}
-	for cfgSourceName, cfgSource := range config.SourcesConfig {
+	for cfgSourceName, cfgSource_ := range config.SourcesConfig {
+		cfgSource := cfgSource_
 		if err := config.loadSource(proxy, requiredProps, cfgSourceName, &cfgSource); err != nil {
 			return err
 		}
@@ -712,8 +777,11 @@ func (config *Config) loadSource(proxy *Proxy, requiredProps stamps.ServerInform
 	}
 	source, err := NewSource(cfgSourceName, proxy.xTransport, cfgSource.URLs, cfgSource.MinisignKeyStr, cfgSource.CacheFile, cfgSource.FormatStr, time.Duration(cfgSource.RefreshDelay)*time.Hour)
 	if err != nil {
-		dlog.Criticalf("Unable to retrieve source [%s]: [%s]", cfgSourceName, err)
-		return err
+		if len(source.in) <= 0 {
+			dlog.Criticalf("Unable to retrieve source [%s]: [%s]", cfgSourceName, err)
+			return err
+		}
+		dlog.Infof("Downloading [%s] failed: %v, using cache file to startup", source.name, err)
 	}
 	proxy.sources = append(proxy.sources, source)
 	registeredServers, err := source.Parse(cfgSource.Prefix)

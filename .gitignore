@@ -12,4 +12,4 @@ dnscrypt-proxy/dnscrypt-proxy
 .idea
 .vscode
 /utils/generate-domains-blacklists/blacklist-rules.txt
-/utils/generate-domains-blacklists/dnscrypt-proxy-blacklist.txt
+/utils/generate-domains-blocklists/dnscrypt-proxy-blacklist.txt
