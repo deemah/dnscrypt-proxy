@@ -239,7 +239,7 @@ def blocklists_from_config_file(
     # Process blocklists
     for url, names in blocklists.items():
         print(
-            "\n\n########## Blocklist from {} ##########\n".format(url),
+            "\n\n########## Blocklist from {} [{}] ##########\n".format(url, len(names)),
             file=output_fd,
             end="\n",
         )
