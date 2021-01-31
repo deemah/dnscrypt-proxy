@@ -70,7 +70,7 @@ type Config struct {
 	AllowIP                  AllowIPConfig               `toml:"allowed_ips"`
 	ForwardFile              string                      `toml:"forwarding_rules"`
 	CloakFile                string                      `toml:"cloaking_rules"`
-	CaptivePortalFile        string                      `toml:"captive_portal_handler"`
+	CaptivePortals           CaptivePortalsConfig        `toml:"captive_portals"`
 	StaticsConfig            map[string]StaticConfig     `toml:"static"`
 	SourcesConfig            map[string]SourceConfig     `toml:"sources"`
 	BrokenImplementations    BrokenImplementationsConfig `toml:"broken_implementations"`
@@ -147,8 +147,11 @@ func newConfig() Config {
 		BrokenImplementations: BrokenImplementationsConfig{
 			FragmentsBlocked: []string{
 				"cisco", "cisco-ipv6", "cisco-familyshield", "cisco-familyshield-ipv6",
-				"cleanbrowsing-adult", "cleanbrowsing-family-ipv6", "cleanbrowsing-family", "cleanbrowsing-security",
+				"cleanbrowsing-adult", "cleanbrowsing-adult-ipv6", "cleanbrowsing-family", "cleanbrowsing-family-ipv6", "cleanbrowsing-security", "cleanbrowsing-security-ipv6",
 			},
+		},
+		AnonymizedDNS: AnonymizedDNSConfig{
+			DirectCertFallback: true,
 		},
 	}
 }
@@ -272,7 +275,12 @@ type DNS64Config struct {
 	Resolvers []string `toml:"resolver"`
 }
 
+type CaptivePortalsConfig struct {
+	MapFile string `toml:"map_file"`
+}
+
 type ConfigFlags struct {
+	Resolve                 *string
 	List                    *bool
 	ListAll                 *bool
 	JSONOutput              *bool
@@ -310,6 +318,16 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	if err != nil {
 		return err
 	}
+
+	if flags.Resolve != nil && len(*flags.Resolve) > 0 {
+		addr := "127.0.0.1:53"
+		if len(config.ListenAddresses) > 0 {
+			addr = config.ListenAddresses[0]
+		}
+		Resolve(addr, *flags.Resolve, len(config.ServerNames) == 1)
+		os.Exit(0)
+	}
+
 	if err := cdFileDir(foundConfigFile); err != nil {
 		return err
 	}
@@ -327,8 +345,8 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		if !*flags.Child {
 			FileDescriptors = append(FileDescriptors, dlog.GetFileDescriptor())
 		} else {
+			dlog.SetFileDescriptor(os.NewFile(uintptr(InheritedDescriptorsBase+FileDescriptorNum), "logFile"))
 			FileDescriptorNum++
-			dlog.SetFileDescriptor(os.NewFile(uintptr(3), "logFile"))
 		}
 	}
 	if !*flags.Child {
@@ -503,10 +521,10 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	proxy.nxLogFormat = config.NxLog.Format
 
 	if len(config.BlockName.File) > 0 && len(config.BlockNameLegacy.File) > 0 {
-		return errors.New("Don't specify both [blocked_names] and [blacklist] sections - Update your config file.")
+		return errors.New("Don't specify both [blocked_names] and [blacklist] sections - Update your config file")
 	}
 	if len(config.BlockNameLegacy.File) > 0 {
-		dlog.Notice("Use of [blacklist] is deprecated - Update your config file.")
+		dlog.Notice("Use of [blacklist] is deprecated - Update your config file")
 		config.BlockName.File = config.BlockNameLegacy.File
 		config.BlockName.Format = config.BlockNameLegacy.Format
 		config.BlockName.LogFile = config.BlockNameLegacy.LogFile
@@ -524,10 +542,10 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	proxy.blockNameLogFile = config.BlockName.LogFile
 
 	if len(config.AllowedName.File) > 0 && len(config.WhitelistNameLegacy.File) > 0 {
-		return errors.New("Don't specify both [whitelist] and [allowed_names] sections - Update your config file.")
+		return errors.New("Don't specify both [whitelist] and [allowed_names] sections - Update your config file")
 	}
 	if len(config.WhitelistNameLegacy.File) > 0 {
-		dlog.Notice("Use of [whitelist] is deprecated - Update your config file.")
+		dlog.Notice("Use of [whitelist] is deprecated - Update your config file")
 		config.AllowedName.File = config.WhitelistNameLegacy.File
 		config.AllowedName.Format = config.WhitelistNameLegacy.Format
 		config.AllowedName.LogFile = config.WhitelistNameLegacy.LogFile
@@ -545,10 +563,10 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	proxy.whitelistNameLogFile = config.AllowedName.LogFile
 
 	if len(config.BlockIP.File) > 0 && len(config.BlockIPLegacy.File) > 0 {
-		return errors.New("Don't specify both [blocked_ips] and [ip_blacklist] sections - Update your config file.")
+		return errors.New("Don't specify both [blocked_ips] and [ip_blacklist] sections - Update your config file")
 	}
 	if len(config.BlockIPLegacy.File) > 0 {
-		dlog.Notice("Use of [ip_blacklist] is deprecated - Update your config file.")
+		dlog.Notice("Use of [ip_blacklist] is deprecated - Update your config file")
 		config.BlockIP.File = config.BlockIPLegacy.File
 		config.BlockIP.Format = config.BlockIPLegacy.Format
 		config.BlockIP.LogFile = config.BlockIPLegacy.LogFile
@@ -579,7 +597,7 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 
 	proxy.forwardFile = config.ForwardFile
 	proxy.cloakFile = config.CloakFile
-	proxy.captivePortalFile = config.CaptivePortalFile
+	proxy.captivePortalMapFile = config.CaptivePortals.MapFile
 
 	allWeeklyRanges, err := ParseAllWeeklyRanges(config.AllWeeklyRanges)
 	if err != nil {
@@ -594,11 +612,11 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		}
 		proxy.routes = &routes
 	}
-	proxy.skipAnonIncompatbibleResolvers = config.AnonymizedDNS.SkipIncompatible
+	proxy.skipAnonIncompatibleResolvers = config.AnonymizedDNS.SkipIncompatible
 	proxy.anonDirectCertFallback = config.AnonymizedDNS.DirectCertFallback
 
 	if config.DoHClientX509AuthLegacy.Creds != nil {
-		return errors.New("[tls_client_auth] has been renamed to [doh_client_x509_auth] - Update your config file.")
+		return errors.New("[tls_client_auth] has been renamed to [doh_client_x509_auth] - Update your config file")
 	}
 	configClientCreds := config.DoHClientX509Auth.Creds
 	creds := make(map[string]DOHClientCreds)
@@ -632,6 +650,24 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		config.SourceDoH = true
 	}
 
+	var requiredProps stamps.ServerInformalProperties
+	if config.SourceRequireDNSSEC {
+		requiredProps |= stamps.ServerInformalPropertyDNSSEC
+	}
+	if config.SourceRequireNoLog {
+		requiredProps |= stamps.ServerInformalPropertyNoLog
+	}
+	if config.SourceRequireNoFilter {
+		requiredProps |= stamps.ServerInformalPropertyNoFilter
+	}
+	proxy.requiredProps = requiredProps
+	proxy.ServerNames = config.ServerNames
+	proxy.DisabledServerNames = config.DisabledServerNames
+	proxy.SourceIPv4 = config.SourceIPv4
+	proxy.SourceIPv6 = config.SourceIPv6
+	proxy.SourceDNSCrypt = config.SourceDNSCrypt
+	proxy.SourceDoH = config.SourceDoH
+
 	netprobeTimeout := config.NetprobeTimeout
 	flag.Visit(func(flag *flag.Flag) {
 		if flag.Name == "netprobe-timeout" && flags.NetprobeTimeoutOverride != nil {
@@ -662,7 +698,7 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 	// if 'userName' is set and we are the parent process drop privilege and exit
 	if len(proxy.userName) > 0 && !proxy.child {
 		proxy.dropPrivilege(proxy.userName, FileDescriptors)
-		return errors.New("Dropping privileges is not supporting on this operating system. Unset `user_name` in the configuration file.")
+		return errors.New("Dropping privileges is not supporting on this operating system. Unset `user_name` in the configuration file")
 	}
 	if !config.OfflineMode {
 		if err := config.loadSources(proxy); err != nil {
@@ -750,19 +786,12 @@ func (config *Config) printRegisteredServers(proxy *Proxy, jsonOutput bool) erro
 }
 
 func (config *Config) loadSources(proxy *Proxy) error {
-	var requiredProps stamps.ServerInformalProperties
-	if config.SourceRequireDNSSEC {
-		requiredProps |= stamps.ServerInformalPropertyDNSSEC
-	}
-	if config.SourceRequireNoLog {
-		requiredProps |= stamps.ServerInformalPropertyNoLog
-	}
-	if config.SourceRequireNoFilter {
-		requiredProps |= stamps.ServerInformalPropertyNoFilter
-	}
 	for cfgSourceName, cfgSource_ := range config.SourcesConfig {
 		cfgSource := cfgSource_
-		if err := config.loadSource(proxy, requiredProps, cfgSourceName, &cfgSource); err != nil {
+		rand.Shuffle(len(cfgSource.URLs), func(i, j int) {
+			cfgSource.URLs[i], cfgSource.URLs[j] = cfgSource.URLs[j], cfgSource.URLs[i]
+		})
+		if err := config.loadSource(proxy, cfgSourceName, &cfgSource); err != nil {
 			return err
 		}
 	}
@@ -794,14 +823,19 @@ func (config *Config) loadSources(proxy *Proxy) error {
 		}
 		proxy.registeredServers = append(proxy.registeredServers, RegisteredServer{name: serverName, stamp: stamp})
 	}
-	rand.Shuffle(len(proxy.registeredServers), func(i, j int) {
-		proxy.registeredServers[i], proxy.registeredServers[j] = proxy.registeredServers[j], proxy.registeredServers[i]
+	proxy.updateRegisteredServers()
+	rs1 := proxy.registeredServers
+	rs2 := proxy.serversInfo.registeredServers
+	rand.Shuffle(len(rs1), func(i, j int) {
+		rs1[i], rs1[j] = rs1[j], rs1[i]
 	})
-
+	rand.Shuffle(len(rs2), func(i, j int) {
+		rs2[i], rs2[j] = rs2[j], rs2[i]
+	})
 	return nil
 }
 
-func (config *Config) loadSource(proxy *Proxy, requiredProps stamps.ServerInformalProperties, cfgSourceName string, cfgSource *SourceConfig) error {
+func (config *Config) loadSource(proxy *Proxy, cfgSourceName string, cfgSource *SourceConfig) error {
 	if len(cfgSource.URLs) == 0 {
 		if len(cfgSource.URL) == 0 {
 			dlog.Debugf("Missing URLs for source [%s]", cfgSourceName)
@@ -820,8 +854,10 @@ func (config *Config) loadSource(proxy *Proxy, requiredProps stamps.ServerInform
 	}
 	if cfgSource.RefreshDelay <= 0 {
 		cfgSource.RefreshDelay = 72
+	} else if cfgSource.RefreshDelay > 168 {
+		cfgSource.RefreshDelay = 168
 	}
-	source, err := NewSource(cfgSourceName, proxy.xTransport, cfgSource.URLs, cfgSource.MinisignKeyStr, cfgSource.CacheFile, cfgSource.FormatStr, time.Duration(cfgSource.RefreshDelay)*time.Hour)
+	source, err := NewSource(cfgSourceName, proxy.xTransport, cfgSource.URLs, cfgSource.MinisignKeyStr, cfgSource.CacheFile, cfgSource.FormatStr, time.Duration(cfgSource.RefreshDelay)*time.Hour, cfgSource.Prefix)
 	if err != nil {
 		if len(source.in) <= 0 {
 			dlog.Criticalf("Unable to retrieve source [%s]: [%s]", cfgSourceName, err)
@@ -830,51 +866,6 @@ func (config *Config) loadSource(proxy *Proxy, requiredProps stamps.ServerInform
 		dlog.Infof("Downloading [%s] failed: %v, using cache file to startup", source.name, err)
 	}
 	proxy.sources = append(proxy.sources, source)
-	registeredServers, err := source.Parse(cfgSource.Prefix)
-	if err != nil {
-		if len(registeredServers) == 0 {
-			dlog.Criticalf("Unable to use source [%s]: [%s]", cfgSourceName, err)
-			return err
-		}
-		dlog.Warnf("Error in source [%s]: [%s] -- Continuing with reduced server count [%d]", cfgSourceName, err, len(registeredServers))
-	}
-	for _, registeredServer := range registeredServers {
-		if registeredServer.stamp.Proto != stamps.StampProtoTypeDNSCryptRelay && registeredServer.stamp.Proto != stamps.StampProtoTypeODoHRelay {
-			if len(config.ServerNames) > 0 {
-				if !includesName(config.ServerNames, registeredServer.name) {
-					continue
-				}
-			} else if registeredServer.stamp.Props&requiredProps != requiredProps {
-				continue
-			}
-		}
-		if includesName(config.DisabledServerNames, registeredServer.name) {
-			continue
-		}
-		if config.SourceIPv4 || config.SourceIPv6 {
-			isIPv4, isIPv6 := true, false
-			if registeredServer.stamp.Proto == stamps.StampProtoTypeDoH {
-				isIPv4, isIPv6 = true, true
-			}
-			if strings.HasPrefix(registeredServer.stamp.ServerAddrStr, "[") {
-				isIPv4, isIPv6 = false, true
-			}
-			if !(config.SourceIPv4 == isIPv4 || config.SourceIPv6 == isIPv6) {
-				continue
-			}
-		}
-		if registeredServer.stamp.Proto == stamps.StampProtoTypeDNSCryptRelay || registeredServer.stamp.Proto == stamps.StampProtoTypeODoHRelay {
-			dlog.Debugf("Adding [%s] to the set of available relays", registeredServer.name)
-			proxy.registeredRelays = append(proxy.registeredRelays, registeredServer)
-		} else {
-			if !((config.SourceDNSCrypt && registeredServer.stamp.Proto == stamps.StampProtoTypeDNSCrypt) ||
-				(config.SourceDoH && registeredServer.stamp.Proto == stamps.StampProtoTypeDoH)) {
-				continue
-			}
-			dlog.Debugf("Adding [%s] to the set of wanted resolvers", registeredServer.name)
-			proxy.registeredServers = append(proxy.registeredServers, registeredServer)
-		}
-	}
 	return nil
 }
 

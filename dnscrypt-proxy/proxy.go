@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -18,80 +19,88 @@ import (
 )
 
 type Proxy struct {
-	pluginsGlobals                 PluginsGlobals
-	serversInfo                    ServersInfo
-	questionSizeEstimator          QuestionSizeEstimator
-	registeredServers              []RegisteredServer
-	dns64Resolvers                 []string
-	dns64Prefixes                  []string
-	serversBlockingFragments       []string
-	ednsClientSubnets              []*net.IPNet
-	queryLogIgnoredQtypes          []string
-	localDoHListeners              []*net.TCPListener
-	queryMeta                      []string
-	udpListeners                   []*net.UDPConn
-	sources                        []*Source
-	tcpListeners                   []*net.TCPListener
-	registeredRelays               []RegisteredServer
-	listenAddresses                []string
-	localDoHListenAddresses        []string
-	xTransport                     *XTransport
-	dohCreds                       *map[string]DOHClientCreds
-	allWeeklyRanges                *map[string]WeeklyRanges
-	routes                         *map[string][]string
-	nxLogFormat                    string
-	localDoHCertFile               string
-	localDoHCertKeyFile            string
-	captivePortalFile              string
-	localDoHPath                   string
-	mainProto                      string
-	cloakFile                      string
-	forwardFile                    string
-	blockIPFormat                  string
-	blockIPLogFile                 string
-	allowedIPFile                  string
-	allowedIPFormat                string
-	allowedIPLogFile               string
-	queryLogFormat                 string
-	blockIPFile                    string
-	whitelistNameFormat            string
-	whitelistNameLogFile           string
-	blockNameLogFile               string
-	whitelistNameFile              string
-	blockNameFile                  string
-	queryLogFile                   string
-	blockedQueryResponse           string
-	userName                       string
-	nxLogFile                      string
-	blockNameFormat                string
-	proxySecretKey                 [32]byte
-	proxyPublicKey                 [32]byte
-	certRefreshDelayAfterFailure   time.Duration
-	timeout                        time.Duration
-	certRefreshDelay               time.Duration
-	cacheSize                      int
-	logMaxBackups                  int
-	logMaxAge                      int
-	logMaxSize                     int
-	cacheNegMinTTL                 uint32
-	rejectTTL                      uint32
-	cacheMaxTTL                    uint32
-	clientsCount                   uint32
-	maxClients                     uint32
-	cacheMinTTL                    uint32
-	cacheNegMaxTTL                 uint32
-	cloakTTL                       uint32
-	cache                          bool
-	pluginBlockIPv6                bool
-	ephemeralKeys                  bool
-	pluginBlockUnqualified         bool
-	showCerts                      bool
-	certIgnoreTimestamp            bool
-	skipAnonIncompatbibleResolvers bool
-	anonDirectCertFallback         bool
-	pluginBlockUndelegated         bool
-	child                          bool
-	daemonize                      bool
+	pluginsGlobals                PluginsGlobals
+	serversInfo                   ServersInfo
+	questionSizeEstimator         QuestionSizeEstimator
+	registeredServers             []RegisteredServer
+	dns64Resolvers                []string
+	dns64Prefixes                 []string
+	serversBlockingFragments      []string
+	ednsClientSubnets             []*net.IPNet
+	queryLogIgnoredQtypes         []string
+	localDoHListeners             []*net.TCPListener
+	queryMeta                     []string
+	udpListeners                  []*net.UDPConn
+	sources                       []*Source
+	tcpListeners                  []*net.TCPListener
+	registeredRelays              []RegisteredServer
+	listenAddresses               []string
+	localDoHListenAddresses       []string
+	xTransport                    *XTransport
+	dohCreds                      *map[string]DOHClientCreds
+	allWeeklyRanges               *map[string]WeeklyRanges
+	routes                        *map[string][]string
+	captivePortalMap              *CaptivePortalMap
+	nxLogFormat                   string
+	localDoHCertFile              string
+	localDoHCertKeyFile           string
+	captivePortalMapFile          string
+	localDoHPath                  string
+	mainProto                     string
+	cloakFile                     string
+	forwardFile                   string
+	blockIPFormat                 string
+	blockIPLogFile                string
+	allowedIPFile                 string
+	allowedIPFormat               string
+	allowedIPLogFile              string
+	queryLogFormat                string
+	blockIPFile                   string
+	whitelistNameFormat           string
+	whitelistNameLogFile          string
+	blockNameLogFile              string
+	whitelistNameFile             string
+	blockNameFile                 string
+	queryLogFile                  string
+	blockedQueryResponse          string
+	userName                      string
+	nxLogFile                     string
+	blockNameFormat               string
+	proxySecretKey                [32]byte
+	proxyPublicKey                [32]byte
+	certRefreshDelayAfterFailure  time.Duration
+	timeout                       time.Duration
+	certRefreshDelay              time.Duration
+	cacheSize                     int
+	logMaxBackups                 int
+	logMaxAge                     int
+	logMaxSize                    int
+	cacheNegMinTTL                uint32
+	rejectTTL                     uint32
+	cacheMaxTTL                   uint32
+	clientsCount                  uint32
+	maxClients                    uint32
+	cacheMinTTL                   uint32
+	cacheNegMaxTTL                uint32
+	cloakTTL                      uint32
+	cache                         bool
+	pluginBlockIPv6               bool
+	ephemeralKeys                 bool
+	pluginBlockUnqualified        bool
+	showCerts                     bool
+	certIgnoreTimestamp           bool
+	skipAnonIncompatibleResolvers bool
+	anonDirectCertFallback        bool
+	pluginBlockUndelegated        bool
+	child                         bool
+	daemonize                     bool
+	requiredProps                 stamps.ServerInformalProperties
+	ServerNames                   []string
+	DisabledServerNames           []string
+	SourceIPv4                    bool
+	SourceIPv6                    bool
+	SourceDNSCrypt                bool
+	SourceDoH                     bool
 }
 
 func (proxy *Proxy) registerUDPListener(conn *net.UDPConn) {
@@ -222,9 +231,6 @@ func (proxy *Proxy) StartProxy() {
 		dlog.Fatal(err)
 	}
 	curve25519.ScalarBaseMult(&proxy.proxyPublicKey, &proxy.proxySecretKey)
-	for _, registeredServer := range proxy.registeredServers {
-		proxy.serversInfo.registerServer(registeredServer.name, registeredServer.stamp)
-	}
 	proxy.startAcceptingClients()
 	liveServers, err := proxy.serversInfo.refresh(proxy)
 	if liveServers > 0 {
@@ -247,6 +253,7 @@ func (proxy *Proxy) StartProxy() {
 	go func() {
 		for {
 			clocksmith.Sleep(PrefetchSources(proxy.xTransport, proxy.sources))
+			proxy.updateRegisteredServers()
 			runtime.GC()
 		}
 	}()
@@ -266,6 +273,89 @@ func (proxy *Proxy) StartProxy() {
 			}
 		}()
 	}
+}
+
+func (proxy *Proxy) updateRegisteredServers() error {
+	for _, source := range proxy.sources {
+		registeredServers, err := source.Parse()
+		if err != nil {
+			if len(registeredServers) == 0 {
+				dlog.Criticalf("Unable to use source [%s]: [%s]", source.name, err)
+				return err
+			}
+			dlog.Warnf("Error in source [%s]: [%s] -- Continuing with reduced server count [%d]", source.name, err, len(registeredServers))
+		}
+		for _, registeredServer := range registeredServers {
+			if registeredServer.stamp.Proto != stamps.StampProtoTypeDNSCryptRelay && registeredServer.stamp.Proto != stamps.StampProtoTypeODoHRelay {
+				if len(proxy.ServerNames) > 0 {
+					if !includesName(proxy.ServerNames, registeredServer.name) {
+						continue
+					}
+				} else if registeredServer.stamp.Props&proxy.requiredProps != proxy.requiredProps {
+					continue
+				}
+			}
+			if includesName(proxy.DisabledServerNames, registeredServer.name) {
+				continue
+			}
+			if proxy.SourceIPv4 || proxy.SourceIPv6 {
+				isIPv4, isIPv6 := true, false
+				if registeredServer.stamp.Proto == stamps.StampProtoTypeDoH {
+					isIPv4, isIPv6 = true, true
+				}
+				if strings.HasPrefix(registeredServer.stamp.ServerAddrStr, "[") {
+					isIPv4, isIPv6 = false, true
+				}
+				if !(proxy.SourceIPv4 == isIPv4 || proxy.SourceIPv6 == isIPv6) {
+					continue
+				}
+			}
+			if registeredServer.stamp.Proto == stamps.StampProtoTypeDNSCryptRelay || registeredServer.stamp.Proto == stamps.StampProtoTypeODoHRelay {
+				var found bool
+				for i, currentRegisteredRelay := range proxy.registeredRelays {
+					if currentRegisteredRelay.name == registeredServer.name {
+						found = true
+						if currentRegisteredRelay.stamp.String() != registeredServer.stamp.String() {
+							dlog.Infof("Updating stamp for [%s] was: %s now: %s", registeredServer.name, currentRegisteredRelay.stamp.String(), registeredServer.stamp.String())
+							proxy.registeredRelays[i].stamp = registeredServer.stamp
+							dlog.Debugf("Total count of registered relays %v", len(proxy.registeredRelays))
+						}
+					}
+				}
+				if !found {
+					dlog.Debugf("Adding [%s] to the set of available relays", registeredServer.name)
+					proxy.registeredRelays = append(proxy.registeredRelays, registeredServer)
+				}
+			} else {
+				if !((proxy.SourceDNSCrypt && registeredServer.stamp.Proto == stamps.StampProtoTypeDNSCrypt) ||
+					(proxy.SourceDoH && registeredServer.stamp.Proto == stamps.StampProtoTypeDoH)) {
+					continue
+				}
+				var found bool
+				for i, currentRegisteredServer := range proxy.registeredServers {
+					if currentRegisteredServer.name == registeredServer.name {
+						found = true
+						if currentRegisteredServer.stamp.String() != registeredServer.stamp.String() {
+							dlog.Infof("Updating stamp for [%s] was: %s now: %s", registeredServer.name, currentRegisteredServer.stamp.String(), registeredServer.stamp.String())
+							proxy.registeredServers[i].stamp = registeredServer.stamp
+						}
+					}
+				}
+				if !found {
+					dlog.Debugf("Adding [%s] to the set of wanted resolvers", registeredServer.name)
+					proxy.registeredServers = append(proxy.registeredServers, registeredServer)
+					dlog.Debugf("Total count of registered servers %v", len(proxy.registeredServers))
+				}
+			}
+		}
+	}
+	for _, registeredServer := range proxy.registeredServers {
+		proxy.serversInfo.registerServer(registeredServer.name, registeredServer.stamp)
+	}
+	for _, registeredRelay := range proxy.registeredRelays {
+		proxy.serversInfo.registerRelay(registeredRelay.name, registeredRelay.stamp)
+	}
+	return nil
 }
 
 func (proxy *Proxy) udpListener(clientPc *net.UDPConn) {
@@ -629,7 +719,11 @@ func (proxy *Proxy) processIncomingQuery(clientProto string, serverProto string,
 		}
 	}
 	if len(response) < MinDNSPacketSize || len(response) > MaxDNSPacketSize {
-		pluginsState.returnCode = PluginsReturnCodeParseError
+		if len(response) == 0 {
+			pluginsState.returnCode = PluginsReturnCodeNotReady
+		} else {
+			pluginsState.returnCode = PluginsReturnCodeParseError
+		}
 		pluginsState.ApplyLoggingPlugins(&proxy.pluginsGlobals)
 		if serverInfo != nil {
 			serverInfo.noticeFailure(proxy)

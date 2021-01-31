@@ -46,6 +46,7 @@ const (
 	PluginsReturnCodeNetworkError
 	PluginsReturnCodeCloak
 	PluginsReturnCodeServerTimeout
+	PluginsReturnCodeNotReady
 )
 
 var PluginsReturnCodeToString = map[PluginsReturnCode]string{
@@ -61,6 +62,7 @@ var PluginsReturnCodeToString = map[PluginsReturnCode]string{
 	PluginsReturnCodeNetworkError:  "NETWORK_ERROR",
 	PluginsReturnCodeCloak:         "CLOAK",
 	PluginsReturnCodeServerTimeout: "SERVER_TIMEOUT",
+	PluginsReturnCodeNotReady:      "NOT_READY",
 }
 
 type PluginsState struct {
@@ -93,6 +95,9 @@ type PluginsState struct {
 func (proxy *Proxy) InitPluginsGlobals() error {
 	queryPlugins := &[]Plugin{}
 
+	if proxy.captivePortalMap != nil {
+		*queryPlugins = append(*queryPlugins, Plugin(new(PluginCaptivePortal)))
+	}
 	if len(proxy.queryMeta) != 0 {
 		*queryPlugins = append(*queryPlugins, Plugin(new(PluginQueryMeta)))
 	}

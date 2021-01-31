@@ -13,3 +13,7 @@ dnscrypt-proxy/dnscrypt-proxy
 .vscode
 /utils/generate-domains-blacklist/blacklist-rules.txt
 /utils/generate-domains-blocklist/dnscrypt-proxy-blacklist.txt
+.ci/*.log
+.ci/*.md
+.ci/*.md.minisig
+.ci/test-dnscrypt-proxy.toml

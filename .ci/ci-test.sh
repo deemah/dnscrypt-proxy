@@ -125,7 +125,7 @@ t || grep -Eq 'telemetry.example.*REJECT' query.log || fail
 t || grep -Eq 'dns.google.*REJECT' query.log || fail
 t || grep -Eq 'tracker.xdebian.org.*REJECT' query.log || fail
 t || grep -Eq 'tracker.debian.org.*PASS' query.log || fail
-t || cut -f2 query.log | grep -Eq -- '-' || fail
+t || grep -Eq '[.].*NS.*PASS' query.log || fail
 
 section
 t || grep -Fq 'tracker.debian.org' allowed-names.log || fail
@@ -135,3 +135,14 @@ if [ -s error.log ]; then
     cat *.log
     exit 1
 fi
+
+section
+../dnscrypt-proxy/dnscrypt-proxy -loglevel 3 -config test3-dnscrypt-proxy.toml -pidfile /tmp/dnscrypt-proxy.pidfile &
+sleep 5
+
+section
+t || dig -p${DNS_PORT} A microsoft.com @127.0.0.1 | grep -Fq "NOERROR" || fail
+t || dig -p${DNS_PORT} A MICROSOFT.COM @127.0.0.1 | grep -Fq "NOERROR" || fail
+
+kill $(cat /tmp/dnscrypt-proxy.pidfile)
+sleep 5

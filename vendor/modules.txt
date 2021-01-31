@@ -36,19 +36,19 @@ github.com/hashicorp/golang-lru/simplelru
 ## explicit
 github.com/hectane/go-acl
 github.com/hectane/go-acl/api
-# github.com/jedisct1/dlog v0.0.0-20201201133931-57e17ecd14f1
+# github.com/jedisct1/dlog v0.0.0-20210101122416-354ffe815216
 ## explicit
 github.com/jedisct1/dlog
-# github.com/jedisct1/go-clocksmith v0.0.0-20190707124905-73e087c7979c
+# github.com/jedisct1/go-clocksmith v0.0.0-20210101121932-da382b963868
 ## explicit
 github.com/jedisct1/go-clocksmith
-# github.com/jedisct1/go-dnsstamps v0.0.0-20201211123510-8d2deeae02b9
+# github.com/jedisct1/go-dnsstamps v0.0.0-20210101121956-16fbdadcf8f5
 ## explicit
 github.com/jedisct1/go-dnsstamps
-# github.com/jedisct1/go-minisign v0.0.0-20190909160543-45766022959e
+# github.com/jedisct1/go-minisign v0.0.0-20210106175330-e54e81d562c7
 ## explicit
 github.com/jedisct1/go-minisign
-# github.com/jedisct1/xsecretbox v0.0.0-20200921000858-23f5ec706e6a
+# github.com/jedisct1/xsecretbox v0.0.0-20210102102453-4ecb2081017a
 ## explicit
 github.com/jedisct1/xsecretbox
 # github.com/k-sone/critbitgo v1.4.0
@@ -57,7 +57,7 @@ github.com/k-sone/critbitgo
 # github.com/kardianos/service v1.2.0
 ## explicit
 github.com/kardianos/service
-# github.com/miekg/dns v1.1.35
+# github.com/miekg/dns v1.1.37
 ## explicit
 github.com/miekg/dns
 # github.com/pkg/errors v0.9.1
@@ -70,7 +70,7 @@ github.com/powerman/check
 # github.com/smartystreets/goconvey v1.6.4
 github.com/smartystreets/goconvey/convey/gotest
 github.com/smartystreets/goconvey/convey/reporting
-# golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
+# golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 ## explicit
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/curve25519
@@ -81,7 +81,7 @@ golang.org/x/crypto/nacl/box
 golang.org/x/crypto/nacl/secretbox
 golang.org/x/crypto/poly1305
 golang.org/x/crypto/salsa20/salsa
-# golang.org/x/net v0.0.0-20201209123823-ac852fbbde11
+# golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 ## explicit
 golang.org/x/net/bpf
 golang.org/x/net/http/httpguts
@@ -94,7 +94,7 @@ golang.org/x/net/internal/socks
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
 golang.org/x/net/proxy
-# golang.org/x/sys v0.0.0-20201211090839-8ad439b19e0f
+# golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
@@ -104,8 +104,7 @@ golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/eventlog
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/text v0.3.4
-## explicit
+# golang.org/x/text v0.3.3
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
